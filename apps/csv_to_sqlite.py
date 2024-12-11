@@ -29,8 +29,8 @@ def csv_to_sqlite(csv_path, sqlite_path):
     conn.commit()
     conn.close()
 
-csv_path = "apps/car_sales_data.csv"
-sqlite_path = "apps/car_sales_data.db"
+csv_path = "car_sales_data.csv"
+sqlite_path = "car_sales_data.db"
 
 try:
     csv_to_sqlite(csv_path, sqlite_path)
@@ -39,7 +39,3 @@ except Exception as e:
     print(f"Error: {e}")
 
 
-if __name__ == "__main__":
-    csv_path = "apps/car_sales_data.csv"  # Path to the CSV file
-    sqlite_path = "apps/car_sales.db"    # Path to the new SQLite file
-    csv_to_sqlite(csv_path, sqlite_path)
