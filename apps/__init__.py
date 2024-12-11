@@ -1,57 +1,54 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
-import os
-
 from flask import Flask
-from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
-from importlib import import_module
+from flask_login import LoginManager
+from apps.config import Config
+from os import path
 
 
+# Initialize SQLAlchemy and Flask-Login
 db = SQLAlchemy()
+sales_db = SQLAlchemy()
 login_manager = LoginManager()
 
-
-def register_extensions(app):
-    db.init_app(app)
-    login_manager.init_app(app)
-
-
-def register_blueprints(app):
-    for module_name in ('authentication', 'home'):
-        module = import_module('apps.{}.routes'.format(module_name))
-        app.register_blueprint(module.blueprint)
-
-
-def configure_database(app):
-
-    @app.before_first_request
-    def initialize_database():
-        try:
-            db.create_all()
-        except Exception as e:
-
-            print('> Error: DBMS Exception: ' + str(e) )
-
-            # fallback to SQLite
-            basedir = os.path.abspath(os.path.dirname(__file__))
-            app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'db.sqlite3')
-
-            print('> Fallback to SQLite ')
-            db.create_all()
-
-    @app.teardown_request
-    def shutdown_session(exception=None):
-        db.session.remove()
-
-
-def create_app(config):
+def create_app():
     app = Flask(__name__)
-    app.config.from_object(config)
-    register_extensions(app)
-    register_blueprints(app)
-    configure_database(app)
+    app.config.from_object(Config)  # Load configuration from Config class
+
+    # Initialize the database with the app
+    db.init_app(app)
+
+    # Initialize LoginManager with the app
+    login_manager.init_app(app)
+    login_manager.login_view = 'views.login'  # Redirect to login if the user is not logged in
+
+    # Import models and register routes after db initialization to avoid circular import
+    with app.app_context():
+        from apps.authentication.formed import User, Note  # Import models here
+        # from apps.sales.model import CarSale
+        create_database(app)
+
+    from apps.authentication.routes import views
+    from apps.home.routes import home_blueprint
+    app.register_blueprint(views, url_prefix='/')
+    app.register_blueprint(home_blueprint, url_prefix='/home')
+
+
     return app
+
+def create_database(app):
+    db_path = path.join('apps', 'data.db')
+    if not path.exists(db_path):
+        with app.app_context():
+            print("Creating tables...")
+            db.create_all()  # Create tables in the database
+        print(f'Database created at: {db_path}')
+    else:
+        print(f'Database already exists at: {db_path}')
+
+from apps.authentication.formed import User
+
+# Set up the user loader function for Flask-Login
+@login_manager.user_loader
+def load_user(user_id):
+    # Assuming your User model has an `id` field
+    return User.query.get(int(user_id))
