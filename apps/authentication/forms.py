@@ -1,31 +1,16 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
-
 from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField
-from wtforms.validators import Email, DataRequired
+from wtforms.fields.simple import SubmitField
+from wtforms.validators import DataRequired, Email,Length, EqualTo
 
-# login and registration
-
+class RegistrationForm(FlaskForm):
+    name = StringField('Name', validators=[DataRequired(), Length(min=4, max=25)])
+    surname = StringField('Surname', validators=[DataRequired(), Length(min=4, max=25)])
+    email = StringField('Email', validators=[DataRequired(), Email()])
+    password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
+    submit = SubmitField('Sign Up')
 
 class LoginForm(FlaskForm):
-    username = StringField('Username',
-                         id='username_login',
-                         validators=[DataRequired()])
-    password = PasswordField('Password',
-                             id='pwd_login',
-                             validators=[DataRequired()])
+    email = StringField('Email', validators=[DataRequired()])
+    password = PasswordField('Password', validators=[DataRequired()])
 
-
-class CreateAccountForm(FlaskForm):
-    username = StringField('Username',
-                         id='username_create',
-                         validators=[DataRequired()])
-    email = StringField('Email',
-                      id='email_create',
-                      validators=[DataRequired(), Email()])
-    password = PasswordField('Password',
-                             id='pwd_create',
-                             validators=[DataRequired()])

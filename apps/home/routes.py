@@ -1,54 +1,17 @@
-# -*- encoding: utf-8 -*-
-"""
-Copyright (c) 2019 - present AppSeed.us
-"""
+from flask import Blueprint, render_template
 
-from apps.home import blueprint
-from flask import render_template, request
-from flask_login import login_required
-from jinja2 import TemplateNotFound
+# Define the blueprint for the home section
+home_blueprint = Blueprint('home_blueprint', __name__, template_folder='templates')
 
-
-@blueprint.route('/index')
-@login_required
+@home_blueprint.route('/', methods=['GET'])
 def index():
+    return render_template('home/index.html')
 
-    return render_template('home/index.html', segment='index')
+@home_blueprint.route('/tables', methods=['GET'])
+def tables():
+    return render_template('home/tables.html')
 
+@home_blueprint.route('/notifications', methods=['GET'])
+def notifications():
+    return render_template('home/notifications.html')
 
-@blueprint.route('/<template>')
-@login_required
-def route_template(template):
-
-    try:
-
-        if not template.endswith('.html'):
-            template += '.html'
-
-        # Detect the current page
-        segment = get_segment(request)
-
-        # Serve the file (if exists) from app/templates/home/FILE.html
-        return render_template("home/" + template, segment=segment)
-
-    except TemplateNotFound:
-        return render_template('home/page-404.html'), 404
-
-    except:
-        return render_template('home/page-500.html'), 500
-
-
-# Helper - Extract current page name from request
-def get_segment(request):
-
-    try:
-
-        segment = request.path.split('/')[-1]
-
-        if segment == '':
-            segment = 'index'
-
-        return segment
-
-    except:
-        return None
