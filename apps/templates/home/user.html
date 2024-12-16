@@ -1,0 +1,214 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize ps-3">Users table</h6>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+              <table class="table align-items-center mb-0" id="usersTable">
+                <thead>
+                  <tr>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">ID</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Name</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Surname</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Email</th>
+                    <th class="text-center text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Password</th>
+                    <th class="text-secondary opacity-7">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  {% for user in users %}
+                    <tr>
+                      <td>{{ user.id }}</td>
+                      <td>{{ user.name }}</td>
+                      <td>{{ user.surname }}</td>
+                      <td>{{ user.email }}</td>
+                      <td>{{ user.password }}</td>
+                      <td>
+                        <button class="btn btn-success btn-sm" onclick="openEditModal({{ user.id }}, '{{ user.name }}', '{{ user.surname }}', '{{ user.email }}')">Edit</button>
+                        <button class="btn btn-danger btn-sm" onclick="deleteUser({{ user.id }})">Delete</button>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Editing Users -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editUserForm">
+            <input type="hidden" id="editUserId">
+            <div class="mb-3">
+              <label for="editUserName" class="form-label">Name</label>
+              <input type="text" class="form-control" id="editUserName">
+            </div>
+            <div class="mb-3">
+              <label for="editUserSurname" class="form-label">Surname</label>
+              <input type="text" class="form-control" id="editUserSurname">
+            </div>
+            <div class="mb-3">
+              <label for="editUserEmail" class="form-label">Email</label>
+              <input type="email" class="form-control" id="editUserEmail">
+            </div>
+             <div class="mb-3">
+              <label for="editUserPassword" class="form-label">Password</label>
+              <input type="text" class="form-control" id="editUserPassword">
+            </div>
+            <button type="button" class="btn btn-primary" onclick="saveUserEdits()">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Function to open the Edit Modal and prefill the form
+    function openEditModal(id, name, surname, email, password) {
+      document.getElementById('editUserId').value = id;
+      document.getElementById('editUserName').value = name;
+      document.getElementById('editUserSurname').value = surname;
+      document.getElementById('editUserEmail').value = email;
+      document.getElementById('editUserPassword').value = password;
+
+      const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+      editModal.show();
+    }
+
+    // Function to save user edits
+    function saveUserEdits() {
+      const userId = document.getElementById('editUserId').value;
+      const name = document.getElementById('editUserName').value;
+      const surname = document.getElementById('editUserSurname').value;
+      const email = document.getElementById('editUserEmail').value;
+      const password = document.getElementById('editUserPassword').value;
+
+      fetch(`/api/users/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: name,
+          surname: surname,
+          email: email,
+          password: password,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          alert('User updated successfully!');
+          const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+          editModal.hide();
+          refreshTable(); // Refresh the table after saving
+        } else {
+          alert('Failed to update user.');
+        }
+      })
+      .catch(error => console.error('Error updating user:', error));
+    }
+
+    // Fetch users when the page loads
+    fetch('/api/users')
+      .then(response => response.json())
+      .then(data => {
+        updateUserTable(data.users);
+      })
+      .catch(error => console.error('Error fetching users:', error));
+
+      function deleteUser(userId) {
+          if(!confirm(`Are you sure you want to delete user with ID ${userId}?`)){
+            return;
+          }
+
+          fetch(`/api/users/delete/${userId}`,{
+            method: 'DELETE',
+            header: {
+              'Content-Type': 'application/json'
+            }
+          })
+          .then(response => {
+              if (!response.ok){
+                return response.json().then(error => {
+                  throw new Error(error.error || 'Failed to delete User');
+                });
+              }
+              return response.json()
+          })
+          .then(data => {
+        // Notify success
+        alert(data.message);
+
+            // Optionally remove the user from the table or refresh the page
+            document.getElementById(`user-row-${userId}`).remove();
+        })
+        .catch(error => {
+            // Notify error
+            console.error('Error:', error);
+            alert(`Error deleting user: ${error.message}`);
+        });
+      }
+
+    // Refresh table after updates
+    function refreshTable() {
+      fetch('/api/users')
+        .then(response => response.json())
+        .then(data => {
+          updateUserTable(data.users);
+        })
+        .catch(error => console.error('Error refreshing users:', error));
+    }
+
+    // Update user table dynamically
+    function updateUserTable(users) {
+      const usersTableBody = document.getElementById('usersTableBody');
+      usersTableBody.innerHTML = '';
+
+      users.forEach(user => {
+        const row = `
+        <tr id="user-row-${user.id}">
+          <td>${user.id}</td>
+          <td>${user.name}</td>
+          <td>${user.surname}</td>
+          <td>${user.email}</td>
+          <td>${user.password}</td>
+          <td>
+            <button class="btn btn-success btn-sm" onclick="openEditModal(${user.id}, '${user.name}', '${user.surname}', '${user.email}', '${user.password}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">Delete</button>
+          </td>
+        </tr>
+      `;
+
+        usersTableBody.innerHTML += row;
+      });
+    }
+  </script>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

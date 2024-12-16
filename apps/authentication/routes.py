@@ -1,8 +1,10 @@
-from flask import Blueprint, redirect, url_for, flash, render_template
+from flask import Blueprint, redirect, url_for, flash, render_template,current_app
 from flask_login import login_user, logout_user, login_required
 from apps.authentication.forms import LoginForm, RegistrationForm
 from werkzeug.security import check_password_hash
 from apps.authentication.formed import User  # Lazy import of models after app setup
+
+
 
 # Define the blueprint
 views = Blueprint('views', __name__, template_folder='templates')

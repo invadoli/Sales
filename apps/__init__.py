@@ -31,8 +31,10 @@ def create_app():
     # Register blueprints
     from apps.authentication.routes import views
     from apps.home.routes import home_blueprint
+    from apps.api.models import api_blueprint
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(home_blueprint, url_prefix='/home')
+    app.register_blueprint(api_blueprint, url_prefix='/api')
 
     return app
 
