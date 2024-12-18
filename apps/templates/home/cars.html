@@ -1,0 +1,224 @@
+{% extends "layouts/base.html" %}
+
+{% block title %} Tables {% endblock %}
+
+<!-- Specific Page CSS goes HERE  -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+  <div class="container-fluid py-4">
+    <div class="row">
+      <div class="col-12">
+        <div class="card my-4">
+          <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+            <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+              <h6 class="text-white text-capitalize ps-3">Users table</h6>
+            </div>
+          </div>
+          <div class="card-body px-0 pb-2">
+            <div class="table-responsive p-0">
+               <table class="table align-items-center mb-0" id="carsTable">
+                <thead>
+                  <tr>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">ID</th>
+                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">SalesPerson</th>
+                    <th class="text-secondary opacity-7">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="carsTableBody">
+                  {% for car in cars %}
+                    <tr>
+                      <td>{{ car['id'] }}</td>  <!-- Assuming car is a dictionary and 'id' is a key -->
+                      <td>{{ car['SalesPerson'] }}</td>  <!-- Assuming 'SalesPerson' is a key in your database result -->
+                      <td>
+                        <a href="#" class="text-secondary">Edit</a> | <a href="#" class="text-danger">Delete</a>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Editing Users -->
+  <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="editUserModalLabel">Edit Cars</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <form id="editUserForm">
+            <input type="hidden" id="editCarId">
+            <div class="mb-3">
+              <label for="editSalesperson" class="form-label">SalesPerson</label>
+              <input type="text" class="form-control" id="editSalesperson">
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="saveUserEdits()">Save Changes</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Function to open the Edit Modal and prefill the form
+    function openEditModal(id, salesperson) {
+      document.getElementById('editCarId').value = id;
+      document.getElementById('editSalesperson').value = salesperson;
+
+      const editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+      editModal.show();
+    }
+
+    // Function to save user edits
+    function saveUserEdits() {
+      const carId = document.getElementById('editCarId').value;
+      const salesperson = document.getElementById('editSalesperson').value;
+
+      fetch(`/api/carSales/${carId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          salesperson: salesperson,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          alert('User updated successfully!');
+          const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+          editModal.hide();
+          refreshTable(); // Refresh the table after saving
+        } else {
+          alert('Failed to update user.');
+        }
+      })
+      .catch(error => console.error('Error updating cars:', error));
+    }
+
+        // Fetch data from the API on page load
+    fetch('/api/cars')
+      .then(response => response.json())
+      .then(data => {
+        updateCarTable(data.cars); // Make sure your API returns cars and update the function name
+      })
+      .catch(error => console.error('Error fetching cars:', error));
+
+    // Update car table dynamically
+    function updateCarTable(cars) {
+      const carsTableBody = document.getElementById('carsTableBody');
+      carsTableBody.innerHTML = '';
+
+      cars.forEach(car => {
+        const row = `
+          <tr id="car-row-${car.id}">
+            <td>${car.id}</td>
+            <td>${car.salesperson}</td>
+            <td>
+              <button class="btn btn-success btn-sm" onclick="openEditModal(${car.id}, '${car.salesperson}')">Edit</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteCar(${car.id})">Delete</button>
+            </td>
+          </tr>
+        `;
+        carsTableBody.innerHTML += row;
+      });
+    }
+
+    // Function to save car edits
+    function saveUserEdits() {
+      const carId = document.getElementById('editCarId').value;
+      const salesperson = document.getElementById('editSalesperson').value;
+
+      fetch(`/api/cars/${carId}`, { // Ensure the API endpoint is correct
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          salesperson: salesperson,
+        }),
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.message) {
+          alert('Car updated successfully!');
+          const editModal = bootstrap.Modal.getInstance(document.getElementById('editUserModal'));
+          editModal.hide();
+          refreshTable(); // Refresh the table after saving
+        } else {
+          alert('Failed to update car.');
+        }
+      })
+      .catch(error => console.error('Error updating car:', error));
+    }
+
+    // Delete car function
+    function deleteCar(carId) {
+  if (!confirm(`Are you sure you want to delete car with ID ${carId}?`)) {
+    return;
+  }
+
+  fetch(`/api/cars/delete/${carId}`, {  // Match the Flask API endpoint for DELETE requests
+    method: 'DELETE',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  })
+  .then(response => response.json())
+  .then(data => {
+    alert(data.message);
+    document.getElementById(`car-row-${carId}`).remove(); // Remove car row from table
+  })
+  .catch(error => {
+    console.error('Error:', error);
+    alert(`Error deleting car: ${error.message}`);
+  });
+}
+
+
+    // Refresh table after updates
+    function refreshTable() {
+      fetch('/api/cars') // Make sure the API returns the updated list of cars
+        .then(response => response.json())
+        .then(data => {
+          updateCarTable(data.cars); // Update the table with the refreshed data
+        })
+        .catch(error => console.error('Error refreshing cars:', error));
+    }
+
+
+    // Update user table dynamically
+    function updateCarTable(cars) {
+  const carsTableBody = document.getElementById('carsTableBody');
+  carsTableBody.innerHTML = '';
+
+  cars.forEach(car => {
+    const row = `
+      <tr id="car-row-${car.id}">
+        <td>${car.id}</td>
+        <td>${car.salesperson}</td>
+        <td>
+          <button class="btn btn-success btn-sm" onclick="openEditModal(${car.id}, '${car.salesperson}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCar(${car.id})">Delete</button>
+        </td>
+      </tr>
+    `;
+    carsTableBody.innerHTML += row;
+  });
+}
+
+  </script>
+
+{% endblock content %}
+
+<!-- Specific Page JS goes HERE  -->
+{% block javascripts %}{% endblock javascripts %}

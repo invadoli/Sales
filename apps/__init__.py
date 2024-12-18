@@ -32,9 +32,11 @@ def create_app():
     from apps.authentication.routes import views
     from apps.home.routes import home_blueprint
     from apps.api.models import api_blueprint
+    from apps.Car.routes import car_blueprint
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(home_blueprint, url_prefix='/home')
     app.register_blueprint(api_blueprint, url_prefix='/api')
+    app.register_blueprint(car_blueprint, url_prefix='/cars')
 
     return app
 
