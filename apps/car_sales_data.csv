@@ -1,4 +1,4 @@
-Date,Salesperson,Customer Name,Car Make,Car Model,Car Year,Sale Price,Commission Rate,Commission Earned
+Date,Salesperson,Customer Name,C    ar Make,Car Model,Car Year,Sale Price,Commission Rate,Commission Earned
 8/1/2022,Monica Moore MD,Mary Butler,Nissan,Altima,2018,15983,0.07049522770435404,1126.73
 3/15/2023,Roberto Rose,Richard Pierce,Nissan,F-150,2016,38474,0.13443883688865882,5172.4
 4/29/2023,Ashley Ramos,Sandra Moore,Ford,Civic,2016,33340,0.11453592158660743,3818.63
